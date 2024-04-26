@@ -1,0 +1,144 @@
+##[[
+cinclude "<curl/curl.h>"
+linklib "curl"
+]]
+
+require "hashmap"
+require "filestream"
+require "stringbuilder"
+require "string"
+require "ez.3rd.curl-bindings"
+
+require "ez.http._"
+
+local function check_method(method: string): boolean
+    return method == "GET" or
+           method == "HEAD" or
+           method == "POST" or
+           method == "PUT" or
+           method == "DELETE" or
+           method == "PATCH"
+end
+
+global ez.http.Headers = @hashmap(string, string)
+
+global ez.http.RequestOptions = @record{
+    method: string,
+    headers: ez.http.Headers,
+    body: string,
+    timeout: integer,
+    follow_redirects: boolean,
+    max_redirects: boolean,
+    output_file: filestream,
+}
+
+global ez.http.ResponseResult = @record{
+    body: string,
+    code: integer,
+    headers: ez.http.Headers,
+}
+
+local WriteCbArgs = @record{
+    buffer: stringbuilder,
+    options: ez.http.RequestOptions,
+}
+
+local HeaderCbArgs = @record{
+    headers: ez.http.Headers,
+}
+
+local function write_callback(data: *[0]cchar, size: csize, nmemb: csize, ud: *void): csize
+    local args = (@*WriteCbArgs)(ud)
+    local datasize = size * nmemb
+
+    if args.options.output_file:isopen() then
+        args.options.output_file:write(data)
+        args.options.output_file:flush()
+    else
+        local s = args.buffer:prepare(datasize)
+        for i = 0, datasize do
+            s[i] = (@byte)(data[i])
+        end
+        args.buffer:commit(datasize)
+    end
+
+    return datasize
+end
+
+local function header_callback(data: cstring, size: csize, nmemb: csize, ud: *void): csize
+    local args = (@*HeaderCbArgs)(ud)
+    local datasize = size * nmemb
+
+    for s in (@string)(data):gmatch("([^\n\r]+)") do
+        local found, captured = s:match("^([%w-]+): (.+)$")
+        if not found then
+            continue
+        end
+
+        args.headers[captured[1]] = captured[2]:gsub("%s+$", "")
+    end
+
+    return datasize
+end
+
+function ez.http.request(url: string, options: facultative(ez.http.RequestOptions)): (boolean, ez.http.ResponseResult, string)
+    ## if options.type.is_niltype then
+    local options = ez.http.RequestOptions{}
+    ## end
+
+    local curl = curl_easy_init()
+    defer curl_easy_cleanup(curl) end
+
+    if not curl then
+        return false, {}, "cannot initialize curl"
+    end
+
+    curl_easy_setopt(curl, CURLOPT_URL, url)
+    
+    if options.method == "" then
+        options.method = "GET"
+    end
+
+    if not check_method(options.method) then
+        return false, {}, "unknown or unsupported method: "..options.method
+    end
+
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, options.method)
+
+    local chunk: *curl_slist
+    for k, v in pairs(options.headers) do
+        chunk = curl_slist_append(chunk, k..": "..v)
+    end
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk)
+
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, options.body)
+
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, options.timeout)
+
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, options.follow_redirects and 1 or 0)
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, options.max_redirects)
+
+    local write_args = WriteCbArgs{
+        options = options,
+    }
+
+    local header_args = HeaderCbArgs{
+        headers = options.headers,
+    }
+
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_args)
+
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_args)
+
+    local ret = curl_easy_perform(curl)
+    if ret ~= CURLE_OK then
+        return false, {}, "failed to perform request: "..curl_easy_strerror(ret)
+    end
+
+    local code: integer
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code)
+
+    return true, { tostring(write_args.buffer), code, header_args.headers }, ""
+end

@@ -1,0 +1,2 @@
+require "ez._"
+global ez.http = @record{}
