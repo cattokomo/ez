@@ -1,3 +1,7 @@
+##[[
+cinclude "<curl/curl.h>"
+linklib "curl"
+]]
 global fd_set: type <cimport,nodecl> = @record{
   __fds_bits: [0]clong
 }
@@ -8,6 +12,8 @@ global sockaddr: type <cimport,nodecl,ctypedef'sockaddr'> = @record{
 global curl_socklen_t: type <cimport,nodecl> = @cuint
 global curl_off_t: type <cimport,nodecl> = @clong
 global FILE: type <cimport,nodecl,cincomplete> = @record{}
+global CURL: type <cimport,nodecl> = @void
+global CURLSH: type <cimport,nodecl> = @void
 global curl_socket_t: type <cimport,nodecl> = @cint
 global curl_sslbackend: type <cimport,nodecl,using> = @enum(cint){
   CURLSSLBACKEND_NONE = 0,
@@ -107,7 +113,12 @@ global curlioerr: type <cimport,nodecl,using> = @enum(cint){
   CURLIOE_FAILRESTART = 2,
   CURLIOE_LAST = 3
 }
-global curl_ioctl_callback: type <cimport,nodecl> = @function(handle: *void, cmd: cint, clientp: pointer): curlioerr
+global curliocmd: type <cimport,nodecl,using> = @enum(cint){
+  CURLIOCMD_NOP = 0,
+  CURLIOCMD_RESTARTREAD = 1,
+  CURLIOCMD_LAST = 2
+}
+global curl_ioctl_callback: type <cimport,nodecl> = @function(handle: *CURL, cmd: cint, clientp: pointer): curlioerr
 global curl_malloc_callback: type <cimport,nodecl> = @function(size: csize): pointer
 global curl_free_callback: type <cimport,nodecl> = @function(ptr: pointer): void
 global curl_realloc_callback: type <cimport,nodecl> = @function(ptr: pointer, size: csize): pointer
@@ -123,7 +134,7 @@ global curl_infotype: type <cimport,nodecl,using> = @enum(cint){
   CURLINFO_SSL_DATA_OUT = 6,
   CURLINFO_END = 7
 }
-global curl_debug_callback: type <cimport,nodecl> = @function(handle: *void, type: curl_infotype, data: cstring, size: csize, userptr: pointer): cint
+global curl_debug_callback: type <cimport,nodecl> = @function(handle: *CURL, type: curl_infotype, data: cstring, size: csize, userptr: pointer): cint
 global curl_prereq_callback: type <cimport,nodecl> = @function(clientp: pointer, conn_primary_ip: cstring, conn_local_ip: cstring, conn_primary_port: cint, conn_local_port: cint): cint
 global CURLcode: type <cimport,nodecl,using> = @enum(cint){
   CURLE_OK = 0,
@@ -229,8 +240,45 @@ global CURLcode: type <cimport,nodecl,using> = @enum(cint){
   CURLE_TOO_LARGE = 100,
   CURL_LAST = 101
 }
+global CURLproxycode: type <cimport,nodecl,using> = @enum(cint){
+  CURLPX_OK = 0,
+  CURLPX_BAD_ADDRESS_TYPE = 1,
+  CURLPX_BAD_VERSION = 2,
+  CURLPX_CLOSED = 3,
+  CURLPX_GSSAPI = 4,
+  CURLPX_GSSAPI_PERMSG = 5,
+  CURLPX_GSSAPI_PROTECTION = 6,
+  CURLPX_IDENTD = 7,
+  CURLPX_IDENTD_DIFFER = 8,
+  CURLPX_LONG_HOSTNAME = 9,
+  CURLPX_LONG_PASSWD = 10,
+  CURLPX_LONG_USER = 11,
+  CURLPX_NO_AUTH = 12,
+  CURLPX_RECV_ADDRESS = 13,
+  CURLPX_RECV_AUTH = 14,
+  CURLPX_RECV_CONNECT = 15,
+  CURLPX_RECV_REQACK = 16,
+  CURLPX_REPLY_ADDRESS_TYPE_NOT_SUPPORTED = 17,
+  CURLPX_REPLY_COMMAND_NOT_SUPPORTED = 18,
+  CURLPX_REPLY_CONNECTION_REFUSED = 19,
+  CURLPX_REPLY_GENERAL_SERVER_FAILURE = 20,
+  CURLPX_REPLY_HOST_UNREACHABLE = 21,
+  CURLPX_REPLY_NETWORK_UNREACHABLE = 22,
+  CURLPX_REPLY_NOT_ALLOWED = 23,
+  CURLPX_REPLY_TTL_EXPIRED = 24,
+  CURLPX_REPLY_UNASSIGNED = 25,
+  CURLPX_REQUEST_FAILED = 26,
+  CURLPX_RESOLVE_HOST = 27,
+  CURLPX_SEND_AUTH = 28,
+  CURLPX_SEND_CONNECT = 29,
+  CURLPX_SEND_REQUEST = 30,
+  CURLPX_UNKNOWN_FAIL = 31,
+  CURLPX_UNKNOWN_MODE = 32,
+  CURLPX_USER_REJECTED = 33,
+  CURLPX_LAST = 34
+}
 global curl_conv_callback: type <cimport,nodecl> = @function(buffer: cstring, length: csize): CURLcode
-global curl_ssl_ctx_callback: type <cimport,nodecl> = @function(curl: *void, ssl_ctx: pointer, userptr: pointer): CURLcode
+global curl_ssl_ctx_callback: type <cimport,nodecl> = @function(curl: *CURL, ssl_ctx: pointer, userptr: pointer): CURLcode
 global curl_proxytype: type <cimport,nodecl,using> = @enum(cint){
   CURLPROXY_HTTP = 0,
   CURLPROXY_HTTP_1_0 = 1,
@@ -268,7 +316,7 @@ global curl_khmatch: type <cimport,nodecl,using,ctypedef'curl_khmatch'> = @enum(
   CURLKHMATCH_MISSING = 2,
   CURLKHMATCH_LAST = 3
 }
-global curl_sshkeycallback: type <cimport,nodecl> = @function(easy: *void, knownkey: *curl_khkey, foundkey: *curl_khkey, a4: curl_khmatch, clientp: pointer): cint
+global curl_sshkeycallback: type <cimport,nodecl> = @function(easy: *CURL, knownkey: *curl_khkey, foundkey: *curl_khkey, a4: curl_khmatch, clientp: pointer): cint
 global curl_sshhostkeycallback: type <cimport,nodecl> = @function(clientp: pointer, keytype: cint, key: cstring, keylen: csize): cint
 global curl_usessl: type <cimport,nodecl,using> = @enum(cint){
   CURLUSESSL_NONE = 0,
@@ -317,8 +365,8 @@ global CURLSTScode: type <cimport,nodecl,using> = @enum(cint){
   CURLSTS_DONE = 1,
   CURLSTS_FAIL = 2
 }
-global curl_hstsread_callback: type <cimport,nodecl> = @function(easy: *void, e: *curl_hstsentry, userp: pointer): CURLSTScode
-global curl_hstswrite_callback: type <cimport,nodecl> = @function(easy: *void, e: *curl_hstsentry, i: *curl_index, userp: pointer): CURLSTScode
+global curl_hstsread_callback: type <cimport,nodecl> = @function(easy: *CURL, e: *curl_hstsentry, userp: pointer): CURLSTScode
+global curl_hstswrite_callback: type <cimport,nodecl> = @function(easy: *CURL, e: *curl_hstsentry, i: *curl_index, userp: pointer): CURLSTScode
 global CURLoption: type <cimport,nodecl,using> = @enum(cint){
   CURLOPT_WRITEDATA = 10001,
   CURLOPT_URL = 10002,
@@ -628,6 +676,55 @@ global CURLoption: type <cimport,nodecl,using> = @enum(cint){
   CURLOPT_SERVER_RESPONSE_TIMEOUT_MS = 324,
   CURLOPT_LASTENTRY = 325
 }
+global CURL_HTTP_VERSION_NONE: cint <comptime> = 0
+global CURL_HTTP_VERSION_1_0: cint <comptime> = 1
+global CURL_HTTP_VERSION_1_1: cint <comptime> = 2
+global CURL_HTTP_VERSION_2_0: cint <comptime> = 3
+global CURL_HTTP_VERSION_2TLS: cint <comptime> = 4
+global CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE: cint <comptime> = 5
+global CURL_HTTP_VERSION_3: cint <comptime> = 30
+global CURL_HTTP_VERSION_3ONLY: cint <comptime> = 31
+global CURL_HTTP_VERSION_LAST: cint <comptime> = 32
+global CURL_RTSPREQ_NONE: cint <comptime> = 0
+global CURL_RTSPREQ_OPTIONS: cint <comptime> = 1
+global CURL_RTSPREQ_DESCRIBE: cint <comptime> = 2
+global CURL_RTSPREQ_ANNOUNCE: cint <comptime> = 3
+global CURL_RTSPREQ_SETUP: cint <comptime> = 4
+global CURL_RTSPREQ_PLAY: cint <comptime> = 5
+global CURL_RTSPREQ_PAUSE: cint <comptime> = 6
+global CURL_RTSPREQ_TEARDOWN: cint <comptime> = 7
+global CURL_RTSPREQ_GET_PARAMETER: cint <comptime> = 8
+global CURL_RTSPREQ_SET_PARAMETER: cint <comptime> = 9
+global CURL_RTSPREQ_RECORD: cint <comptime> = 10
+global CURL_RTSPREQ_RECEIVE: cint <comptime> = 11
+global CURL_RTSPREQ_LAST: cint <comptime> = 12
+global CURL_NETRC_OPTION: type <cimport,nodecl,using,ctypedef'CURL_NETRC_OPTION'> = @enum(cint){
+  CURL_NETRC_IGNORED = 0,
+  CURL_NETRC_OPTIONAL = 1,
+  CURL_NETRC_REQUIRED = 2,
+  CURL_NETRC_LAST = 3
+}
+global CURL_SSLVERSION_DEFAULT: cint <comptime> = 0
+global CURL_SSLVERSION_TLSv1: cint <comptime> = 1
+global CURL_SSLVERSION_SSLv2: cint <comptime> = 2
+global CURL_SSLVERSION_SSLv3: cint <comptime> = 3
+global CURL_SSLVERSION_TLSv1_0: cint <comptime> = 4
+global CURL_SSLVERSION_TLSv1_1: cint <comptime> = 5
+global CURL_SSLVERSION_TLSv1_2: cint <comptime> = 6
+global CURL_SSLVERSION_TLSv1_3: cint <comptime> = 7
+global CURL_SSLVERSION_LAST: cint <comptime> = 8
+global CURL_SSLVERSION_MAX_NONE: cint <comptime> = 0
+global CURL_SSLVERSION_MAX_DEFAULT: cint <comptime> = 65536
+global CURL_SSLVERSION_MAX_TLSv1_0: cint <comptime> = 262144
+global CURL_SSLVERSION_MAX_TLSv1_1: cint <comptime> = 327680
+global CURL_SSLVERSION_MAX_TLSv1_2: cint <comptime> = 393216
+global CURL_SSLVERSION_MAX_TLSv1_3: cint <comptime> = 458752
+global CURL_SSLVERSION_MAX_LAST: cint <comptime> = 524288
+global CURL_TLSAUTH: type <cimport,nodecl,using,ctypedef'CURL_TLSAUTH'> = @enum(cint){
+  CURL_TLSAUTH_NONE = 0,
+  CURL_TLSAUTH_SRP = 1,
+  CURL_TLSAUTH_LAST = 2
+}
 global curl_TimeCond: type <cimport,nodecl,using> = @enum(cint){
   CURL_TIMECOND_NONE = 0,
   CURL_TIMECOND_IFMODSINCE = 1,
@@ -802,8 +899,8 @@ global curl_lock_access: type <cimport,nodecl,using> = @enum(cint){
   CURL_LOCK_ACCESS_SINGLE = 2,
   CURL_LOCK_ACCESS_LAST = 3
 }
-global curl_lock_function: type <cimport,nodecl> = @function(handle: *void, data: curl_lock_data, locktype: curl_lock_access, userptr: pointer): void
-global curl_unlock_function: type <cimport,nodecl> = @function(handle: *void, data: curl_lock_data, userptr: pointer): void
+global curl_lock_function: type <cimport,nodecl> = @function(handle: *CURL, data: curl_lock_data, locktype: curl_lock_access, userptr: pointer): void
+global curl_unlock_function: type <cimport,nodecl> = @function(handle: *CURL, data: curl_lock_data, userptr: pointer): void
 global CURLSHcode: type <cimport,nodecl,using> = @enum(cint){
   CURLSHE_OK = 0,
   CURLSHE_BAD_OPTION = 1,
@@ -869,6 +966,7 @@ global curl_blob: type <cimport,nodecl,ctypedef'curl_blob'> = @record{
   len: csize,
   flags: cuint
 }
+global CURLM: type <cimport,nodecl> = @void
 global CURLMcode: type <cimport,nodecl,using> = @enum(cint){
   CURLM_CALL_MULTI_PERFORM = -1,
   CURLM_OK = 0,
@@ -893,7 +991,7 @@ global CURLMSG: type <cimport,nodecl,using> = @enum(cint){
 }
 global CURLMsg: type <cimport,nodecl> = @record{
   msg: CURLMSG,
-  easy_handle: *void,
+  easy_handle: *CURL,
   data: union{
     whatever: pointer,
     result: CURLcode
@@ -904,8 +1002,8 @@ global curl_waitfd: type <cimport,nodecl,ctypedef'curl_waitfd'> = @record{
   events: cshort,
   revents: cshort
 }
-global curl_socket_callback: type <cimport,nodecl> = @function(easy: *void, s: curl_socket_t, what: cint, userp: pointer, socketp: pointer): cint
-global curl_multi_timer_callback: type <cimport,nodecl> = @function(multi: *void, timeout_ms: clong, userp: pointer): cint
+global curl_socket_callback: type <cimport,nodecl> = @function(easy: *CURL, s: curl_socket_t, what: cint, userp: pointer, socketp: pointer): cint
+global curl_multi_timer_callback: type <cimport,nodecl> = @function(multi: *CURLM, timeout_ms: clong, userp: pointer): cint
 global CURLMoption: type <cimport,nodecl,using> = @enum(cint){
   CURLMOPT_SOCKETFUNCTION = 20001,
   CURLMOPT_SOCKETDATA = 10002,
@@ -926,7 +1024,7 @@ global CURLMoption: type <cimport,nodecl,using> = @enum(cint){
   CURLMOPT_LASTENTRY = 17
 }
 global curl_pushheaders: type <cimport,nodecl,ctypedef'curl_pushheaders',forwarddecl> = @record{}
-global curl_push_callback: type <cimport,nodecl> = @function(parent: *void, easy: *void, num_headers: csize, headers: *curl_pushheaders, userp: pointer): cint
+global curl_push_callback: type <cimport,nodecl> = @function(parent: *CURL, easy: *CURL, num_headers: csize, headers: *curl_pushheaders, userp: pointer): cint
 global CURLUcode: type <cimport,nodecl,using> = @enum(cint){
   CURLUE_OK = 0,
   CURLUE_BAD_HANDLE = 1,
@@ -1020,7 +1118,7 @@ global curl_ws_frame: type <cimport,nodecl,ctypedef'curl_ws_frame'> = @record{
 }
 global function curl_strequal(s1: cstring, s2: cstring): cint <cimport,nodecl> end
 global function curl_strnequal(s1: cstring, s2: cstring, n: csize): cint <cimport,nodecl> end
-global function curl_mime_init(easy: *void): *curl_mime <cimport,nodecl> end
+global function curl_mime_init(easy: *CURL): *curl_mime <cimport,nodecl> end
 global function curl_mime_free(mime: *curl_mime): void <cimport,nodecl> end
 global function curl_mime_addpart(mime: *curl_mime): *curl_mimepart <cimport,nodecl> end
 global function curl_mime_name(part: *curl_mimepart, name: cstring): CURLcode <cimport,nodecl> end
@@ -1037,9 +1135,9 @@ global function curl_formget(form: *curl_httppost, arg: pointer, append: curl_fo
 global function curl_formfree(form: *curl_httppost): void <cimport,nodecl> end
 global function curl_getenv(variable: cstring): cstring <cimport,nodecl> end
 global function curl_version(): cstring <cimport,nodecl> end
-global function curl_easy_escape(handle: *void, string: cstring, length: cint): cstring <cimport,nodecl> end
+global function curl_easy_escape(handle: *CURL, string: cstring, length: cint): cstring <cimport,nodecl> end
 global function curl_escape(string: cstring, length: cint): cstring <cimport,nodecl> end
-global function curl_easy_unescape(handle: *void, string: cstring, length: cint, outlength: *cint): cstring <cimport,nodecl> end
+global function curl_easy_unescape(handle: *CURL, string: cstring, length: cint, outlength: *cint): cstring <cimport,nodecl> end
 global function curl_unescape(string: cstring, length: cint): cstring <cimport,nodecl> end
 global function curl_free(p: pointer): void <cimport,nodecl> end
 global function curl_global_init(flags: clong): CURLcode <cimport,nodecl> end
@@ -1050,41 +1148,41 @@ global function curl_global_sslset(id: curl_sslbackend, name: cstring, avail: **
 global function curl_slist_append(list: *curl_slist, data: cstring): *curl_slist <cimport,nodecl> end
 global function curl_slist_free_all(list: *curl_slist): void <cimport,nodecl> end
 global function curl_getdate(p: cstring, unused: *ctime_t): ctime_t <cimport,nodecl> end
-global function curl_share_init(): *void <cimport,nodecl> end
-global function curl_share_setopt(share: *void, option: CURLSHoption, ...: cvarargs): CURLSHcode <cimport,nodecl> end
-global function curl_share_cleanup(share: *void): CURLSHcode <cimport,nodecl> end
+global function curl_share_init(): *CURLSH <cimport,nodecl> end
+global function curl_share_setopt(share: *CURLSH, option: CURLSHoption, ...: cvarargs): CURLSHcode <cimport,nodecl> end
+global function curl_share_cleanup(share: *CURLSH): CURLSHcode <cimport,nodecl> end
 global function curl_version_info(a1: CURLversion): *curl_version_info_data <cimport,nodecl> end
 global function curl_easy_strerror(a1: CURLcode): cstring <cimport,nodecl> end
 global function curl_share_strerror(a1: CURLSHcode): cstring <cimport,nodecl> end
-global function curl_easy_pause(handle: *void, bitmask: cint): CURLcode <cimport,nodecl> end
-global function curl_easy_init(): *void <cimport,nodecl> end
-global function curl_easy_setopt(curl: *void, option: CURLoption, ...: cvarargs): CURLcode <cimport,nodecl> end
-global function curl_easy_perform(curl: *void): CURLcode <cimport,nodecl> end
-global function curl_easy_cleanup(curl: *void): void <cimport,nodecl> end
-global function curl_easy_getinfo(curl: *void, info: CURLINFO, ...: cvarargs): CURLcode <cimport,nodecl> end
-global function curl_easy_duphandle(curl: *void): *void <cimport,nodecl> end
-global function curl_easy_reset(curl: *void): void <cimport,nodecl> end
-global function curl_easy_recv(curl: *void, buffer: pointer, buflen: csize, n: *csize): CURLcode <cimport,nodecl> end
-global function curl_easy_send(curl: *void, buffer: pointer, buflen: csize, n: *csize): CURLcode <cimport,nodecl> end
-global function curl_easy_upkeep(curl: *void): CURLcode <cimport,nodecl> end
-global function curl_multi_init(): *void <cimport,nodecl> end
-global function curl_multi_add_handle(multi_handle: *void, curl_handle: *void): CURLMcode <cimport,nodecl> end
-global function curl_multi_remove_handle(multi_handle: *void, curl_handle: *void): CURLMcode <cimport,nodecl> end
-global function curl_multi_fdset(multi_handle: *void, read_fd_set: *fd_set, write_fd_set: *fd_set, exc_fd_set: *fd_set, max_fd: *cint): CURLMcode <cimport,nodecl> end
-global function curl_multi_wait(multi_handle: *void, extra_fds: *[0]curl_waitfd, extra_nfds: cuint, timeout_ms: cint, ret: *cint): CURLMcode <cimport,nodecl> end
-global function curl_multi_poll(multi_handle: *void, extra_fds: *[0]curl_waitfd, extra_nfds: cuint, timeout_ms: cint, ret: *cint): CURLMcode <cimport,nodecl> end
-global function curl_multi_wakeup(multi_handle: *void): CURLMcode <cimport,nodecl> end
-global function curl_multi_perform(multi_handle: *void, running_handles: *cint): CURLMcode <cimport,nodecl> end
-global function curl_multi_cleanup(multi_handle: *void): CURLMcode <cimport,nodecl> end
-global function curl_multi_info_read(multi_handle: *void, msgs_in_queue: *cint): *CURLMsg <cimport,nodecl> end
+global function curl_easy_pause(handle: *CURL, bitmask: cint): CURLcode <cimport,nodecl> end
+global function curl_easy_init(): *CURL <cimport,nodecl> end
+global function curl_easy_setopt(curl: *CURL, option: CURLoption, ...: cvarargs): CURLcode <cimport,nodecl> end
+global function curl_easy_perform(curl: *CURL): CURLcode <cimport,nodecl> end
+global function curl_easy_cleanup(curl: *CURL): void <cimport,nodecl> end
+global function curl_easy_getinfo(curl: *CURL, info: CURLINFO, ...: cvarargs): CURLcode <cimport,nodecl> end
+global function curl_easy_duphandle(curl: *CURL): *CURL <cimport,nodecl> end
+global function curl_easy_reset(curl: *CURL): void <cimport,nodecl> end
+global function curl_easy_recv(curl: *CURL, buffer: pointer, buflen: csize, n: *csize): CURLcode <cimport,nodecl> end
+global function curl_easy_send(curl: *CURL, buffer: pointer, buflen: csize, n: *csize): CURLcode <cimport,nodecl> end
+global function curl_easy_upkeep(curl: *CURL): CURLcode <cimport,nodecl> end
+global function curl_multi_init(): *CURLM <cimport,nodecl> end
+global function curl_multi_add_handle(multi_handle: *CURLM, curl_handle: *CURL): CURLMcode <cimport,nodecl> end
+global function curl_multi_remove_handle(multi_handle: *CURLM, curl_handle: *CURL): CURLMcode <cimport,nodecl> end
+global function curl_multi_fdset(multi_handle: *CURLM, read_fd_set: *fd_set, write_fd_set: *fd_set, exc_fd_set: *fd_set, max_fd: *cint): CURLMcode <cimport,nodecl> end
+global function curl_multi_wait(multi_handle: *CURLM, extra_fds: *[0]curl_waitfd, extra_nfds: cuint, timeout_ms: cint, ret: *cint): CURLMcode <cimport,nodecl> end
+global function curl_multi_poll(multi_handle: *CURLM, extra_fds: *[0]curl_waitfd, extra_nfds: cuint, timeout_ms: cint, ret: *cint): CURLMcode <cimport,nodecl> end
+global function curl_multi_wakeup(multi_handle: *CURLM): CURLMcode <cimport,nodecl> end
+global function curl_multi_perform(multi_handle: *CURLM, running_handles: *cint): CURLMcode <cimport,nodecl> end
+global function curl_multi_cleanup(multi_handle: *CURLM): CURLMcode <cimport,nodecl> end
+global function curl_multi_info_read(multi_handle: *CURLM, msgs_in_queue: *cint): *CURLMsg <cimport,nodecl> end
 global function curl_multi_strerror(a1: CURLMcode): cstring <cimport,nodecl> end
-global function curl_multi_socket(multi_handle: *void, s: curl_socket_t, running_handles: *cint): CURLMcode <cimport,nodecl> end
-global function curl_multi_socket_action(multi_handle: *void, s: curl_socket_t, ev_bitmask: cint, running_handles: *cint): CURLMcode <cimport,nodecl> end
-global function curl_multi_socket_all(multi_handle: *void, running_handles: *cint): CURLMcode <cimport,nodecl> end
-global function curl_multi_timeout(multi_handle: *void, milliseconds: *clong): CURLMcode <cimport,nodecl> end
-global function curl_multi_setopt(multi_handle: *void, option: CURLMoption, ...: cvarargs): CURLMcode <cimport,nodecl> end
-global function curl_multi_assign(multi_handle: *void, sockfd: curl_socket_t, sockp: pointer): CURLMcode <cimport,nodecl> end
-global function curl_multi_get_handles(multi_handle: *void): **void <cimport,nodecl> end
+global function curl_multi_socket(multi_handle: *CURLM, s: curl_socket_t, running_handles: *cint): CURLMcode <cimport,nodecl> end
+global function curl_multi_socket_action(multi_handle: *CURLM, s: curl_socket_t, ev_bitmask: cint, running_handles: *cint): CURLMcode <cimport,nodecl> end
+global function curl_multi_socket_all(multi_handle: *CURLM, running_handles: *cint): CURLMcode <cimport,nodecl> end
+global function curl_multi_timeout(multi_handle: *CURLM, milliseconds: *clong): CURLMcode <cimport,nodecl> end
+global function curl_multi_setopt(multi_handle: *CURLM, option: CURLMoption, ...: cvarargs): CURLMcode <cimport,nodecl> end
+global function curl_multi_assign(multi_handle: *CURLM, sockfd: curl_socket_t, sockp: pointer): CURLMcode <cimport,nodecl> end
+global function curl_multi_get_handles(multi_handle: *CURLM): **CURL <cimport,nodecl> end
 global function curl_pushheader_bynum(h: *curl_pushheaders, num: csize): cstring <cimport,nodecl> end
 global function curl_pushheader_byname(h: *curl_pushheaders, name: cstring): cstring <cimport,nodecl> end
 global function curl_url(): *CURLU <cimport,nodecl> end
@@ -1096,11 +1194,11 @@ global function curl_url_strerror(a1: CURLUcode): cstring <cimport,nodecl> end
 global function curl_easy_option_by_name(name: cstring): *curl_easyoption <cimport,nodecl> end
 global function curl_easy_option_by_id(id: CURLoption): *curl_easyoption <cimport,nodecl> end
 global function curl_easy_option_next(prev: *curl_easyoption): *curl_easyoption <cimport,nodecl> end
-global function curl_easy_header(easy: *void, name: cstring, index: csize, origin: cuint, request: cint, hout: **curl_header): CURLHcode <cimport,nodecl> end
-global function curl_easy_nextheader(easy: *void, origin: cuint, request: cint, prev: *curl_header): *curl_header <cimport,nodecl> end
-global function curl_ws_recv(curl: *void, buffer: pointer, buflen: csize, recv: *csize, metap: **curl_ws_frame): CURLcode <cimport,nodecl> end
-global function curl_ws_send(curl: *void, buffer: pointer, buflen: csize, sent: *csize, fragsize: curl_off_t, flags: cuint): CURLcode <cimport,nodecl> end
-global function curl_ws_meta(curl: *void): *curl_ws_frame <cimport,nodecl> end
+global function curl_easy_header(easy: *CURL, name: cstring, index: csize, origin: cuint, request: cint, hout: **curl_header): CURLHcode <cimport,nodecl> end
+global function curl_easy_nextheader(easy: *CURL, origin: cuint, request: cint, prev: *curl_header): *curl_header <cimport,nodecl> end
+global function curl_ws_recv(curl: *CURL, buffer: pointer, buflen: csize, recv: *csize, metap: **curl_ws_frame): CURLcode <cimport,nodecl> end
+global function curl_ws_send(curl: *CURL, buffer: pointer, buflen: csize, sent: *csize, fragsize: curl_off_t, flags: cuint): CURLcode <cimport,nodecl> end
+global function curl_ws_meta(curl: *CURL): *curl_ws_frame <cimport,nodecl> end
 global function curl_mprintf(format: cstring, ...: cvarargs): cint <cimport,nodecl> end
 global function curl_mfprintf(fd: *FILE, format: cstring, ...: cvarargs): cint <cimport,nodecl> end
 global function curl_msprintf(buffer: cstring, format: cstring, ...: cvarargs): cint <cimport,nodecl> end
@@ -1111,4 +1209,310 @@ global function curl_mvsprintf(buffer: cstring, format: cstring, args: cvalist):
 global function curl_mvsnprintf(buffer: cstring, maxlength: csize, format: cstring, args: cvalist): cint <cimport,nodecl> end
 global function curl_maprintf(format: cstring, ...: cvarargs): cstring <cimport,nodecl> end
 global function curl_mvaprintf(format: cstring, args: cvalist): cstring <cimport,nodecl> end
+global CURL_TYPEOF_CURL_OFF_T: type = clong
+global CURL_FORMAT_CURL_OFF_T: cstring <comptime> = "ld"
+global CURL_FORMAT_CURL_OFF_TU: cstring <comptime> = "lu"
+global CURL_TYPEOF_CURL_SOCKLEN_T: type = cuint
+global CURL_SOCKET_BAD: cint <comptime> = -1
+global CURLSSLBACKEND_AWSLC: cint <comptime> = 1
+global CURLSSLBACKEND_BORINGSSL: cint <comptime> = 1
+global CURLSSLBACKEND_LIBRESSL: cint <comptime> = 1
+global CURLSSLBACKEND_CYASSL: cint <comptime> = 7
+global CURLSSLBACKEND_DARWINSSL: cint <comptime> = 9
+global CURL_HTTPPOST_FILENAME: cint <comptime> = 1
+global CURL_HTTPPOST_READFILE: cint <comptime> = 2
+global CURL_HTTPPOST_PTRNAME: cint <comptime> = 4
+global CURL_HTTPPOST_PTRCONTENTS: cint <comptime> = 8
+global CURL_HTTPPOST_BUFFER: cint <comptime> = 16
+global CURL_HTTPPOST_PTRBUFFER: cint <comptime> = 32
+global CURL_HTTPPOST_CALLBACK: cint <comptime> = 64
+global CURL_HTTPPOST_LARGE: cint <comptime> = 128
+global CURL_PROGRESSFUNC_CONTINUE: cint <comptime> = 268435457
+global CURL_MAX_READ_SIZE: cint <comptime> = 10485760
+global CURL_MAX_WRITE_SIZE: cint <comptime> = 16384
+global CURL_MAX_HTTP_HEADER: cint <comptime> = 102400
+global CURL_WRITEFUNC_PAUSE: cint <comptime> = 268435457
+global CURL_WRITEFUNC_ERROR: cuint <comptime> = 4294967295
+global CURLFINFOFLAG_KNOWN_FILENAME: cint <comptime> = 1
+global CURLFINFOFLAG_KNOWN_FILETYPE: cint <comptime> = 2
+global CURLFINFOFLAG_KNOWN_TIME: cint <comptime> = 4
+global CURLFINFOFLAG_KNOWN_PERM: cint <comptime> = 8
+global CURLFINFOFLAG_KNOWN_UID: cint <comptime> = 16
+global CURLFINFOFLAG_KNOWN_GID: cint <comptime> = 32
+global CURLFINFOFLAG_KNOWN_SIZE: cint <comptime> = 64
+global CURLFINFOFLAG_KNOWN_HLINKCOUNT: cint <comptime> = 128
+global CURL_CHUNK_BGN_FUNC_OK: cint <comptime> = 0
+global CURL_CHUNK_BGN_FUNC_FAIL: cint <comptime> = 1
+global CURL_CHUNK_BGN_FUNC_SKIP: cint <comptime> = 2
+global CURL_CHUNK_END_FUNC_OK: cint <comptime> = 0
+global CURL_CHUNK_END_FUNC_FAIL: cint <comptime> = 1
+global CURL_FNMATCHFUNC_MATCH: cint <comptime> = 0
+global CURL_FNMATCHFUNC_NOMATCH: cint <comptime> = 1
+global CURL_FNMATCHFUNC_FAIL: cint <comptime> = 2
+global CURL_SEEKFUNC_OK: cint <comptime> = 0
+global CURL_SEEKFUNC_FAIL: cint <comptime> = 1
+global CURL_SEEKFUNC_CANTSEEK: cint <comptime> = 2
+global CURL_READFUNC_ABORT: cint <comptime> = 268435456
+global CURL_READFUNC_PAUSE: cint <comptime> = 268435457
+global CURL_TRAILERFUNC_OK: cint <comptime> = 0
+global CURL_TRAILERFUNC_ABORT: cint <comptime> = 1
+global CURL_SOCKOPT_OK: cint <comptime> = 0
+global CURL_SOCKOPT_ERROR: cint <comptime> = 1
+global CURL_SOCKOPT_ALREADY_CONNECTED: cint <comptime> = 2
+global CURL_PREREQFUNC_OK: cint <comptime> = 0
+global CURL_PREREQFUNC_ABORT: cint <comptime> = 1
+global CURLE_OBSOLETE16: cint <comptime> = 16
+global CURLE_OBSOLETE10: cint <comptime> = 10
+global CURLE_OBSOLETE12: cint <comptime> = 12
+global CURLOPT_ENCODING: cint <comptime> = 10102
+global CURLE_FTP_WEIRD_SERVER_REPLY: cint <comptime> = 8
+global CURLE_SSL_CACERT: cint <comptime> = 60
+global CURLE_UNKNOWN_TELNET_OPTION: cint <comptime> = 48
+global CURLE_TELNET_OPTION_SYNTAX: cint <comptime> = 49
+global CURLE_SSL_PEER_CERTIFICATE: cint <comptime> = 60
+global CURLE_OBSOLETE: cint <comptime> = 50
+global CURLE_BAD_PASSWORD_ENTERED: cint <comptime> = 46
+global CURLE_BAD_CALLING_ORDER: cint <comptime> = 44
+global CURLE_FTP_USER_PASSWORD_INCORRECT: cint <comptime> = 10
+global CURLE_FTP_CANT_RECONNECT: cint <comptime> = 16
+global CURLE_FTP_COULDNT_GET_SIZE: cint <comptime> = 32
+global CURLE_FTP_COULDNT_SET_ASCII: cint <comptime> = 29
+global CURLE_FTP_WEIRD_USER_REPLY: cint <comptime> = 12
+global CURLE_FTP_WRITE_ERROR: cint <comptime> = 20
+global CURLE_LIBRARY_NOT_FOUND: cint <comptime> = 40
+global CURLE_MALFORMAT_USER: cint <comptime> = 24
+global CURLE_SHARE_IN_USE: cint <comptime> = 57
+global CURLE_URL_MALFORMAT_USER: cint <comptime> = 4
+global CURLE_FTP_ACCESS_DENIED: cint <comptime> = 9
+global CURLE_FTP_COULDNT_SET_BINARY: cint <comptime> = 17
+global CURLE_FTP_QUOTE_ERROR: cint <comptime> = 21
+global CURLE_TFTP_DISKFULL: cint <comptime> = 70
+global CURLE_TFTP_EXISTS: cint <comptime> = 73
+global CURLE_HTTP_RANGE_ERROR: cint <comptime> = 33
+global CURLE_FTP_SSL_FAILED: cint <comptime> = 64
+global CURLE_OPERATION_TIMEOUTED: cint <comptime> = 28
+global CURLE_HTTP_NOT_FOUND: cint <comptime> = 22
+global CURLE_HTTP_PORT_FAILED: cint <comptime> = 45
+global CURLE_FTP_COULDNT_STOR_FILE: cint <comptime> = 25
+global CURLE_FTP_PARTIAL_FILE: cint <comptime> = 18
+global CURLE_FTP_BAD_DOWNLOAD_RESUME: cint <comptime> = 36
+global CURLE_LDAP_INVALID_URL: cint <comptime> = 62
+global CURLE_CONV_REQD: cint <comptime> = 76
+global CURLE_CONV_FAILED: cint <comptime> = 75
+global CURLE_ALREADY_COMPLETE: cint <comptime> = 99999
+global CURLOPT_FILE: cint <comptime> = 10001
+global CURLOPT_INFILE: cint <comptime> = 10009
+global CURLOPT_WRITEHEADER: cint <comptime> = 10029
+global CURLOPT_WRITEINFO: cint <comptime> = 10040
+global CURLOPT_CLOSEPOLICY: cint <comptime> = 72
+global CURLAUTH_NONE: culong <comptime> = 0
+global CURLAUTH_BASIC: cint <comptime> = 1
+global CURLAUTH_DIGEST: cint <comptime> = 2
+global CURLAUTH_NEGOTIATE: cint <comptime> = 4
+global CURLAUTH_GSSNEGOTIATE: cint <comptime> = 4
+global CURLAUTH_GSSAPI: cint <comptime> = 4
+global CURLAUTH_NTLM: cint <comptime> = 8
+global CURLAUTH_DIGEST_IE: cint <comptime> = 16
+global CURLAUTH_NTLM_WB: cint <comptime> = 32
+global CURLAUTH_BEARER: cint <comptime> = 64
+global CURLAUTH_AWS_SIGV4: cint <comptime> = 128
+global CURLAUTH_ANY: cint <cimport,nodecl,const>
+global CURLAUTH_ANYSAFE: cint <cimport,nodecl,const>
+global CURLSSH_AUTH_ANY: cint <cimport,nodecl,const>
+global CURLSSH_AUTH_NONE: cint <comptime> = 0
+global CURLSSH_AUTH_PUBLICKEY: cint <comptime> = 1
+global CURLSSH_AUTH_PASSWORD: cint <comptime> = 2
+global CURLSSH_AUTH_HOST: cint <comptime> = 4
+global CURLSSH_AUTH_KEYBOARD: cint <comptime> = 8
+global CURLSSH_AUTH_AGENT: cint <comptime> = 16
+global CURLSSH_AUTH_GSSAPI: cint <comptime> = 32
+global CURLSSH_AUTH_DEFAULT: cint <cimport,nodecl,const>
+global CURLGSSAPI_DELEGATION_NONE: cint <comptime> = 0
+global CURLGSSAPI_DELEGATION_POLICY_FLAG: cint <comptime> = 1
+global CURLGSSAPI_DELEGATION_FLAG: cint <comptime> = 2
+global CURL_ERROR_SIZE: cint <comptime> = 256
+global CURLSSLOPT_ALLOW_BEAST: cint <comptime> = 1
+global CURLSSLOPT_NO_REVOKE: cint <comptime> = 2
+global CURLSSLOPT_NO_PARTIALCHAIN: cint <comptime> = 4
+global CURLSSLOPT_REVOKE_BEST_EFFORT: cint <comptime> = 8
+global CURLSSLOPT_NATIVE_CA: cint <comptime> = 16
+global CURLSSLOPT_AUTO_CLIENT_CERT: cint <comptime> = 32
+global CURL_HET_DEFAULT: clong <comptime> = 200
+global CURL_UPKEEP_INTERVAL_DEFAULT: clong <comptime> = 60000
+global CURLFTPSSL_NONE: cint <comptime> = 0
+global CURLFTPSSL_TRY: cint <comptime> = 1
+global CURLFTPSSL_CONTROL: cint <comptime> = 2
+global CURLFTPSSL_ALL: cint <comptime> = 3
+global CURLFTPSSL_LAST: cint <comptime> = 4
 global curl_ftpssl: type = curl_usessl
+global CURLHEADER_UNIFIED: cint <comptime> = 0
+global CURLHEADER_SEPARATE: cint <comptime> = 1
+global CURLALTSVC_READONLYFILE: cint <comptime> = 4
+global CURLALTSVC_H1: cint <comptime> = 8
+global CURLALTSVC_H2: cint <comptime> = 16
+global CURLALTSVC_H3: cint <comptime> = 32
+global CURLPROTO_HTTP: cint <comptime> = 1
+global CURLPROTO_HTTPS: cint <comptime> = 2
+global CURLPROTO_FTP: cint <comptime> = 4
+global CURLPROTO_FTPS: cint <comptime> = 8
+global CURLPROTO_SCP: cint <comptime> = 16
+global CURLPROTO_SFTP: cint <comptime> = 32
+global CURLPROTO_TELNET: cint <comptime> = 64
+global CURLPROTO_LDAP: cint <comptime> = 128
+global CURLPROTO_LDAPS: cint <comptime> = 256
+global CURLPROTO_DICT: cint <comptime> = 512
+global CURLPROTO_FILE: cint <comptime> = 1024
+global CURLPROTO_TFTP: cint <comptime> = 2048
+global CURLPROTO_IMAP: cint <comptime> = 4096
+global CURLPROTO_IMAPS: cint <comptime> = 8192
+global CURLPROTO_POP3: cint <comptime> = 16384
+global CURLPROTO_POP3S: cint <comptime> = 32768
+global CURLPROTO_SMTP: cint <comptime> = 65536
+global CURLPROTO_SMTPS: cint <comptime> = 131072
+global CURLPROTO_RTSP: cint <comptime> = 262144
+global CURLPROTO_RTMP: cint <comptime> = 524288
+global CURLPROTO_RTMPT: cint <comptime> = 1048576
+global CURLPROTO_RTMPE: cint <comptime> = 2097152
+global CURLPROTO_RTMPTE: cint <comptime> = 4194304
+global CURLPROTO_RTMPS: cint <comptime> = 8388608
+global CURLPROTO_RTMPTS: cint <comptime> = 16777216
+global CURLPROTO_GOPHER: cint <comptime> = 33554432
+global CURLPROTO_SMB: cint <comptime> = 67108864
+global CURLPROTO_SMBS: cint <comptime> = 134217728
+global CURLPROTO_MQTT: cint <comptime> = 268435456
+global CURLPROTO_GOPHERS: cint <comptime> = 536870912
+global CURLPROTO_ALL: cint <cimport,nodecl,const>
+global CURLOPTTYPE_LONG: cint <comptime> = 0
+global CURLOPTTYPE_OBJECTPOINT: cint <comptime> = 10000
+global CURLOPTTYPE_FUNCTIONPOINT: cint <comptime> = 20000
+global CURLOPTTYPE_OFF_T: cint <comptime> = 30000
+global CURLOPTTYPE_BLOB: cint <comptime> = 40000
+global CURLOPTTYPE_STRINGPOINT: cint <comptime> = 10000
+global CURLOPTTYPE_SLISTPOINT: cint <comptime> = 10000
+global CURLOPTTYPE_CBPOINT: cint <comptime> = 10000
+global CURLOPTTYPE_VALUES: cint <comptime> = 0
+global CURLOPT_PROGRESSDATA: cint <comptime> = 10057
+global CURLOPT_POST301: cint <comptime> = 161
+global CURLOPT_SSLKEYPASSWD: cint <comptime> = 10026
+global CURLOPT_FTPAPPEND: cint <comptime> = 50
+global CURLOPT_FTPLISTONLY: cint <comptime> = 48
+global CURLOPT_FTP_SSL: cint <comptime> = 119
+global CURLOPT_SSLCERTPASSWD: cint <comptime> = 10026
+global CURLOPT_KRB4LEVEL: cint <comptime> = 10063
+global CURLOPT_FTP_RESPONSE_TIMEOUT: cint <comptime> = 112
+global CURLOPT_MAIL_RCPT_ALLLOWFAILS: cint <comptime> = 290
+global CURL_IPRESOLVE_WHATEVER: cint <comptime> = 0
+global CURL_IPRESOLVE_V4: cint <comptime> = 1
+global CURL_IPRESOLVE_V6: cint <comptime> = 2
+global CURLOPT_RTSPHEADER: cint <comptime> = 10023
+global CURL_HTTP_VERSION_2: cint <comptime> = 3
+global CURL_REDIR_GET_ALL: cint <comptime> = 0
+global CURL_REDIR_POST_301: cint <comptime> = 1
+global CURL_REDIR_POST_302: cint <comptime> = 2
+global CURL_REDIR_POST_303: cint <comptime> = 4
+global CURL_REDIR_POST_ALL: cint <comptime> = 7
+global CURL_ZERO_TERMINATED: csize <cimport,nodecl,const>
+global CURLMIMEOPT_FORMESCAPE: cint <comptime> = 1
+global CURLINFO_STRING: cint <comptime> = 1048576
+global CURLINFO_LONG: cint <comptime> = 2097152
+global CURLINFO_DOUBLE: cint <comptime> = 3145728
+global CURLINFO_SLIST: cint <comptime> = 4194304
+global CURLINFO_PTR: cint <comptime> = 4194304
+global CURLINFO_SOCKET: cint <comptime> = 5242880
+global CURLINFO_OFF_T: cint <comptime> = 6291456
+global CURLINFO_MASK: cint <comptime> = 1048575
+global CURLINFO_TYPEMASK: cint <comptime> = 15728640
+global CURLINFO_HTTP_CODE: cint <comptime> = 2097154
+global CURL_GLOBAL_SSL: cint <comptime> = 1
+global CURL_GLOBAL_WIN32: cint <comptime> = 2
+global CURL_GLOBAL_ALL: cint <comptime> = 3
+global CURL_GLOBAL_NOTHING: cint <comptime> = 0
+global CURL_GLOBAL_DEFAULT: cint <comptime> = 3
+global CURL_GLOBAL_ACK_EINTR: cint <comptime> = 4
+global CURLVERSION_NOW: cint <comptime> = 10
+global CURL_VERSION_IPV6: cint <comptime> = 1
+global CURL_VERSION_KERBEROS4: cint <comptime> = 2
+global CURL_VERSION_SSL: cint <comptime> = 4
+global CURL_VERSION_LIBZ: cint <comptime> = 8
+global CURL_VERSION_NTLM: cint <comptime> = 16
+global CURL_VERSION_GSSNEGOTIATE: cint <comptime> = 32
+global CURL_VERSION_DEBUG: cint <comptime> = 64
+global CURL_VERSION_ASYNCHDNS: cint <comptime> = 128
+global CURL_VERSION_SPNEGO: cint <comptime> = 256
+global CURL_VERSION_LARGEFILE: cint <comptime> = 512
+global CURL_VERSION_IDN: cint <comptime> = 1024
+global CURL_VERSION_SSPI: cint <comptime> = 2048
+global CURL_VERSION_CONV: cint <comptime> = 4096
+global CURL_VERSION_CURLDEBUG: cint <comptime> = 8192
+global CURL_VERSION_TLSAUTH_SRP: cint <comptime> = 16384
+global CURL_VERSION_NTLM_WB: cint <comptime> = 32768
+global CURL_VERSION_HTTP2: cint <comptime> = 65536
+global CURL_VERSION_GSSAPI: cint <comptime> = 131072
+global CURL_VERSION_KERBEROS5: cint <comptime> = 262144
+global CURL_VERSION_UNIX_SOCKETS: cint <comptime> = 524288
+global CURL_VERSION_PSL: cint <comptime> = 1048576
+global CURL_VERSION_HTTPS_PROXY: cint <comptime> = 2097152
+global CURL_VERSION_MULTI_SSL: cint <comptime> = 4194304
+global CURL_VERSION_BROTLI: cint <comptime> = 8388608
+global CURL_VERSION_ALTSVC: cint <comptime> = 16777216
+global CURL_VERSION_HTTP3: cint <comptime> = 33554432
+global CURL_VERSION_ZSTD: cint <comptime> = 67108864
+global CURL_VERSION_UNICODE: cint <comptime> = 134217728
+global CURL_VERSION_HSTS: cint <comptime> = 268435456
+global CURL_VERSION_GSASL: cint <comptime> = 536870912
+global CURL_VERSION_THREADSAFE: cint <comptime> = 1073741824
+global CURLPAUSE_RECV: cint <comptime> = 1
+global CURLPAUSE_RECV_CONT: cint <comptime> = 0
+global CURLPAUSE_SEND: cint <comptime> = 4
+global CURLPAUSE_SEND_CONT: cint <comptime> = 0
+global CURLPAUSE_ALL: cint <comptime> = 5
+global CURLPAUSE_CONT: cint <comptime> = 0
+global CURL_BLOB_COPY: cint <comptime> = 1
+global CURL_BLOB_NOCOPY: cint <comptime> = 0
+global CURLM_CALL_MULTI_SOCKET: cint <comptime> = -1
+global CURLPIPE_NOTHING: clong <comptime> = 0
+global CURLPIPE_HTTP1: clong <comptime> = 1
+global CURLPIPE_MULTIPLEX: clong <comptime> = 2
+global CURL_WAIT_POLLIN: cint <comptime> = 1
+global CURL_WAIT_POLLPRI: cint <comptime> = 2
+global CURL_WAIT_POLLOUT: cint <comptime> = 4
+global CURL_POLL_NONE: cint <comptime> = 0
+global CURL_POLL_IN: cint <comptime> = 1
+global CURL_POLL_OUT: cint <comptime> = 2
+global CURL_POLL_INOUT: cint <comptime> = 3
+global CURL_POLL_REMOVE: cint <comptime> = 4
+global CURL_SOCKET_TIMEOUT: cint <comptime> = -1
+global CURL_CSELECT_IN: cint <comptime> = 1
+global CURL_CSELECT_OUT: cint <comptime> = 2
+global CURL_CSELECT_ERR: cint <comptime> = 4
+global CURL_PUSH_OK: cint <comptime> = 0
+global CURL_PUSH_DENY: cint <comptime> = 1
+global CURL_PUSH_ERROROUT: cint <comptime> = 2
+global CURLU_DEFAULT_PORT: cint <comptime> = 1
+global CURLU_NO_DEFAULT_PORT: cint <comptime> = 2
+global CURLU_DEFAULT_SCHEME: cint <comptime> = 4
+global CURLU_NON_SUPPORT_SCHEME: cint <comptime> = 8
+global CURLU_PATH_AS_IS: cint <comptime> = 16
+global CURLU_DISALLOW_USER: cint <comptime> = 32
+global CURLU_URLDECODE: cint <comptime> = 64
+global CURLU_URLENCODE: cint <comptime> = 128
+global CURLU_APPENDQUERY: cint <comptime> = 256
+global CURLU_GUESS_SCHEME: cint <comptime> = 512
+global CURLU_NO_AUTHORITY: cint <comptime> = 1024
+global CURLU_ALLOW_SPACE: cint <comptime> = 2048
+global CURLU_PUNYCODE: cint <comptime> = 4096
+global CURLU_PUNY2IDN: cint <comptime> = 8192
+global CURLOT_FLAG_ALIAS: cint <comptime> = 1
+global CURLH_HEADER: cint <comptime> = 1
+global CURLH_TRAILER: cint <comptime> = 2
+global CURLH_CONNECT: cint <comptime> = 4
+global CURLH_1XX: cint <comptime> = 8
+global CURLH_PSEUDO: cint <comptime> = 16
+global CURLWS_TEXT: cint <comptime> = 1
+global CURLWS_BINARY: cint <comptime> = 2
+global CURLWS_CONT: cint <comptime> = 4
+global CURLWS_CLOSE: cint <comptime> = 8
+global CURLWS_PING: cint <comptime> = 16
+global CURLWS_OFFSET: cint <comptime> = 32
+global CURLWS_PONG: cint <comptime> = 64
+global CURLWS_RAW_MODE: cint <comptime> = 1

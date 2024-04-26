@@ -1,8 +1,3 @@
-##[[
-cinclude "<curl/curl.h>"
-linklib "curl"
-]]
-
 require "hashmap"
 require "filestream"
 require "stringbuilder"
