@@ -1,3 +1,10 @@
+--[[
+HTTP library.
+
+This library provides HTTP client API, via libcurl.
+It depends on libcurl, please install before using this.
+]]
+
 require "hashmap"
 require "filestream"
 require "stringbuilder"
@@ -15,22 +22,25 @@ local function check_method(method: string): boolean
            method == "PATCH"
 end
 
+-- Headers type, alias to `hashmap(string, string)`.
 global ez.http.Headers = @hashmap(string, string)
 
+-- Request options.
 global ez.http.RequestOptions = @record{
-    method: string,
-    headers: ez.http.Headers,
-    body: string,
-    timeout: integer,
-    follow_redirects: boolean,
-    max_redirects: boolean,
-    output_file: filestream,
+    method: string, -- HTTP method, e.g `GET`, `HEAD`, `POST`...
+    headers: ez.http.Headers, -- Headers to send
+    body: string, -- Body to send
+    timeout: integer, -- Timeout
+    follow_redirects: boolean, -- Whether to follow redirects
+    max_redirects: boolean, -- Maximum numbers to follow redirects
+    output_file: filestream, -- Output file instead of returning `response.body`
 }
 
+-- Response result from request.
 global ez.http.ResponseResult = @record{
-    body: string,
-    code: integer,
-    headers: ez.http.Headers,
+    body: string, -- Response body, can be empty depends on `options.output_file`
+    code: integer, -- HTTP code
+    headers: ez.http.Headers, -- Response headers
 }
 
 local WriteCbArgs = @record{
@@ -76,6 +86,14 @@ local function header_callback(data: cstring, size: csize, nmemb: csize, ud: *vo
     return datasize
 end
 
+-- Send HTTP request.
+--
+-- `url`: URL to send the HTTP request.
+-- `options`: Additional options in the request.
+-- Returns:
+--   * `boolean`: Whether the request is successfully made.
+--   * `ez.http.ResponseResult`: Response result from the request.
+--   * `string`: Error message if request failed.
 function ez.http.request(url: string, options: facultative(ez.http.RequestOptions)): (boolean, ez.http.ResponseResult, string)
     ## if options.type.is_niltype then
     local options = ez.http.RequestOptions{}

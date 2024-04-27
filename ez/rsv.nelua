@@ -1,0 +1,60 @@
+--[[
+RSV parser and serializer library.
+
+This library provides a parser/decoder and serializer/encoder for the [RSV format](https://github.com/Stenway/RSV-Specification).
+]]
+
+require "stringbuilder"
+require "string"
+require "sequence"
+
+require "ez.rsv._"
+
+-- Encode List of string sequences into RSV.
+--
+-- `rows`: List of string or null string (string with `str.data == nilptr`) sequences.
+-- Returns:
+--   * `string`: RSV encoded string.
+function ez.rsv.encode(rows: sequence(sequence(string))): string
+    local value_term, null_val, row_term = 0xFF, 0xFE, 0xFD
+    local buffer: stringbuilder
+    for _, row in ipairs(rows) do
+        for _, v in ipairs(row) do
+            if v.data == nilptr then
+                buffer:writebyte(null_val)
+            elseif #v > 0 then
+                buffer:write(v)
+end
+            buffer:writebyte(value_term)
+        end
+        buffer:writebyte(row_term)
+    end
+    return tostring(buffer)
+end
+
+-- Decode RSV encoded string into list of string sequences.
+--
+-- `data`: RSV encoded string.
+-- Returns:
+--   * `boolean`: Whether it successfully decode the string.
+--   * `sequence(sequence(string))`: List of string sequences from the RSV encoded string. String may have `data == nilptr`.
+--   * `string`: Error message.
+function ez.rsv.decode(data: string): (boolean, sequence(sequence(string)), string)
+    if #data > 0 and data:byte(#data) ~= 0xFD then
+        return false, {}, "incomplete RSV document"
+    end
+    local list: sequence(sequence(string))
+    local current_row: sequence(string)
+    for row in data:gmatch("([^\xFD]+)") do
+        for v in row:gmatch("([^\xFF]+)") do
+            if v == "\xFE" then
+                current_row:push({nilptr})
+            else
+                current_row:push(v)
+            end
+        end
+        list:push(current_row:copy())
+        current_row:clear()
+    end
+    return true, list
+end
